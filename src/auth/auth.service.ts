@@ -14,14 +14,23 @@ import type { ConfigType } from '@nestjs/config';
 import refreshJwtConfig from 'src/config/refresh-jwt.config';
 import { JwtPayload } from './strategy/JWT.strategy';
 
+import googleConfig from '../config/googleAuth';
+import { OAuth2Client, TokenPayload } from 'google-auth-library';
+
 @Injectable()
 export class AuthService {
+  private client: OAuth2Client;
+
   constructor(
     private readonly usersService: UsersService,
     private jwtService: JwtService,
     @Inject(refreshJwtConfig.KEY)
     private RefreshJwtConfig: ConfigType<typeof refreshJwtConfig>,
-  ) {}
+    @Inject(googleConfig.KEY)
+    private GoogleConfig: ConfigType<typeof googleConfig>,
+  ) {
+    this.client = new OAuth2Client();
+  }
 
   async LocalRegister(user: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(user.email);
@@ -68,12 +77,15 @@ export class AuthService {
     const { token, refreshToken } = await this.generateTokens(userID);
     const hashedRefreshToken = await argon2.hash(refreshToken);
 
-    await this.usersService.update(userID, { hashedRefreshToken });
+    const user = (await this.usersService.update(userID, {
+      hashedRefreshToken,
+    }))!;
 
     return {
       id: userID,
       token,
       refreshToken,
+      hasPassword: !user.password ? true : false,
     };
   }
 
@@ -108,5 +120,42 @@ export class AuthService {
 
   async singOut(userID: string) {
     await this.usersService.update(userID, { hashedRefreshToken: undefined });
+  }
+
+  async googleAuth(AuthToken: { idToken: string }) {
+    const ClientsId = [
+      this.GoogleConfig.Web_Client_ID,
+      this.GoogleConfig.Android_Client_ID,
+      this.GoogleConfig.iOS_Client_ID,
+    ].filter(Boolean);
+
+    const ticket = await this.client.verifyIdToken({
+      idToken: AuthToken.idToken,
+
+      audience: ClientsId,
+    });
+
+    const payload: TokenPayload | undefined = ticket.getPayload();
+
+    if (!payload || !payload.email) {
+      throw new UnauthorizedException('Invalid Google Auth');
+    }
+
+    const { email } = payload;
+
+    let user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      user = await this.usersService.create({ email });
+    }
+
+    const { token, refreshToken } = await this.refresh(user.id);
+
+    return {
+      id: user.id,
+      token,
+      refreshToken,
+      hasPassword: user.password ? true : false,
+    };
   }
 }

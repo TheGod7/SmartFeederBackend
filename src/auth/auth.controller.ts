@@ -4,7 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  // Get,
   Post,
   Request,
   UseGuards,
@@ -43,9 +42,16 @@ export class AuthController {
     return this.authService.singOut(req.user.id);
   }
 
+  @Post('google-auth')
+  googleAuth(@Body() AuthToken: { idToken: string }) {
+    return this.authService.googleAuth(AuthToken);
+  }
+
   @UseGuards(JWTGuard)
   @Get('me')
   me(@Request() req) {
-    return req.user;
+    return {
+      id: req.user.id,
+    };
   }
 }
