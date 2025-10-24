@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -77,15 +78,14 @@ export class AuthService {
     const { token, refreshToken } = await this.generateTokens(userID);
     const hashedRefreshToken = await argon2.hash(refreshToken);
 
-    const user = (await this.usersService.update(userID, {
+    await this.usersService.update(userID, {
       hashedRefreshToken,
-    }))!;
+    });
 
     return {
       id: userID,
       token,
       refreshToken,
-      hasPassword: !user.password ? true : false,
     };
   }
 
@@ -123,39 +123,76 @@ export class AuthService {
   }
 
   async googleAuth(AuthToken: { idToken: string }) {
-    const ClientsId = [
-      this.GoogleConfig.Web_Client_ID,
-      this.GoogleConfig.Android_Client_ID,
-      this.GoogleConfig.iOS_Client_ID,
-    ].filter(Boolean);
+    try {
+      const ClientsId = [
+        this.GoogleConfig.Web_Client_ID,
+        this.GoogleConfig.Android_Client_ID,
+        this.GoogleConfig.iOS_Client_ID,
+      ].filter(Boolean);
 
-    const ticket = await this.client.verifyIdToken({
-      idToken: AuthToken.idToken,
+      const ticket = await this.client.verifyIdToken({
+        idToken: AuthToken.idToken,
+        audience: ClientsId,
+      });
 
-      audience: ClientsId,
-    });
+      const payload: TokenPayload | undefined = ticket.getPayload();
 
-    const payload: TokenPayload | undefined = ticket.getPayload();
+      if (
+        !payload ||
+        !payload.sub ||
+        !payload.email ||
+        !payload.email_verified ||
+        !ClientsId.includes(payload.aud) ||
+        !['accounts.google.com', 'https://accounts.google.com'].includes(
+          payload.iss,
+        )
+      ) {
+        throw new UnauthorizedException('Invalid Google ID Token');
+      }
 
-    if (!payload || !payload.email) {
-      throw new UnauthorizedException('Invalid Google Auth');
+      const userEmail = payload.email;
+      let user = await this.usersService.findByEmail(userEmail);
+
+      if (!user) {
+        user = await this.usersService.create({ email: userEmail });
+      }
+
+      const { token, refreshToken } = await this.refresh(user.id);
+
+      return {
+        id: user.id,
+        token,
+        refreshToken,
+        hasPassword: Boolean(user.password),
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid Google ID Token');
+    }
+  }
+
+  async changePassword(userID: string, newPassword: string) {
+    if (!newPassword) {
+      throw new BadRequestException('Password is required');
     }
 
-    const { email } = payload;
+    if (newPassword.length < 8) {
+      throw new BadRequestException(
+        'Password must be at least 8 characters long',
+      );
+    }
 
-    let user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findById(userID);
 
     if (!user) {
-      user = await this.usersService.create({ email });
+      throw new UnauthorizedException('User not found');
     }
 
-    const { token, refreshToken } = await this.refresh(user.id);
+    user.password = newPassword;
+    await user.save();
 
     return {
-      id: user.id,
-      token,
-      refreshToken,
-      hasPassword: user.password ? true : false,
+      id: userID,
+      message: 'Password updated successfully',
     };
   }
 }
