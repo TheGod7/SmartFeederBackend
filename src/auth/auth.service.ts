@@ -165,7 +165,7 @@ export class AuthService {
         refreshToken,
         hasPassword: Boolean(user.password),
       };
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid Google ID Token');
     }
   }
