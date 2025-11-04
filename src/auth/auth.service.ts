@@ -195,4 +195,14 @@ export class AuthService {
       message: 'Password updated successfully',
     };
   }
+
+  async validateJWT(id: string) {
+    const user = await this.usersService.findById(id);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return { id: user._id };
+  }
 }
