@@ -16,6 +16,9 @@ export class User {
 
   @Prop({ required: false, default: null })
   hashedRefreshToken?: string;
+
+  @Prop({ type: [String], default: [] })
+  deviceId: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

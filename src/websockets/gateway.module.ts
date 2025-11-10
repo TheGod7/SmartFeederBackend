@@ -5,11 +5,19 @@ import { VideoGateway } from './ws/video.gateway';
 import { AudioGateway } from './ws/audio.gateway';
 import { ControllerGateway } from './ws/control.gateway';
 
-import { SocketController } from './socket/socket.controller';
-import { WsController } from './ws/ws.controller';
+import { SocketService } from './socket/socket.service';
+import { WsService } from './ws/ws.service';
+import { DevicesModule } from 'src/devices/devices.module';
 
 @Module({
-  providers: [VideoGateway, AudioGateway, ControllerGateway, SocketIOGateway],
-  controllers: [SocketController, WsController],
+  imports: [DevicesModule],
+  providers: [
+    VideoGateway,
+    AudioGateway,
+    ControllerGateway,
+    SocketIOGateway,
+    WsService,
+    SocketService,
+  ],
 })
 export class GatewayModule {}

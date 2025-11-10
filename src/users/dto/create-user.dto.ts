@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsString,
   MinLength,
+  IsArray,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -21,4 +22,9 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   hashedRefreshToken?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  deviceId?: string[];
 }
