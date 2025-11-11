@@ -6,6 +6,7 @@ import {
   Req,
   Get,
   Query,
+  Param,
 } from '@nestjs/common';
 import { DevicesService } from './devices.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
@@ -52,5 +53,15 @@ export class DevicesController {
   @Get('feeder')
   async feeder(@Query('deviceId') deviceId: string) {
     return await this.devicesService.info(deviceId);
+  }
+
+  @Get('brands')
+  brands() {
+    return this.devicesService.AllBrands();
+  }
+
+  @Get('brands/:id')
+  brand(@Param('id') id: string) {
+    return this.devicesService.getFoodById(id);
   }
 }

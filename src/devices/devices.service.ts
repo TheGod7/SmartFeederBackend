@@ -11,6 +11,7 @@ import { Device, DeviceDocument } from './entities/device.entity';
 import { Model, Types } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
+import { cats, dogs } from './entities/FoodData.json';
 
 @Injectable()
 export class DevicesService {
@@ -214,5 +215,31 @@ export class DevicesService {
         configuration: device.configuration,
       },
     };
+  }
+
+  AllBrands() {
+    return {
+      dogs: dogs.map((dog) => {
+        return {
+          id: dog.id,
+          name: dog.name,
+        };
+      }),
+      cats: cats.map((cat) => {
+        return {
+          id: cat.id,
+          name: cat.name,
+        };
+      }),
+    };
+  }
+
+  getFoodById(id: string) {
+    const dogFood = dogs.find((dog) => dog.id === id);
+    const catFood = cats.find((cat) => cat.id === id);
+
+    const foodInfo = catFood || dogFood;
+
+    return foodInfo;
   }
 }

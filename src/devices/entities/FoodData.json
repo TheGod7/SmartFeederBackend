@@ -1,0 +1,216 @@
+{
+  "dogs": [
+    {
+      "id": "D01",
+      "name": "Royal Canin - Small / Mini Adult",
+      "kcal_per_kg": 3744,
+      "kcal_per_g": 3.744,
+      "protein_pct": 24,
+      "fat_pct": 14,
+      "fiber_pct": 3,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "D02",
+      "name": "Purina Pro Plan - Small Breed (Chicken & Rice)",
+      "kcal_per_kg": 4053,
+      "kcal_per_g": 4.053,
+      "protein_pct": 30,
+      "fat_pct": 18,
+      "fiber_pct": 3,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "D03",
+      "name": "Hill's Science Diet - Adult Small & Toy",
+      "kcal_per_kg": 3699,
+      "kcal_per_g": 3.699,
+      "protein_pct": 25,
+      "fat_pct": 14,
+      "fiber_pct": 3,
+      "moisture_pct": 10,
+      "ash_pct": 6.5
+    },
+    {
+      "id": "D04",
+      "name": "NUPEC - MR Adulto (línea MR)",
+      "kcal_per_kg": 3500,
+      "kcal_per_g": 3.5,
+      "protein_pct": 26,
+      "fat_pct": 14,
+      "fiber_pct": 3.5,
+      "moisture_pct": 10,
+      "ash_pct": 6.5
+    },
+    {
+      "id": "D05",
+      "name": "Eukanuba - Adult Small Breed",
+      "kcal_per_kg": 3858,
+      "kcal_per_g": 3.858,
+      "protein_pct": 28,
+      "fat_pct": 15,
+      "fiber_pct": 3,
+      "moisture_pct": 10,
+      "ash_pct": 6.5
+    },
+    {
+      "id": "D06",
+      "name": "ACANA - Adult",
+      "kcal_per_kg": 3510,
+      "kcal_per_g": 3.51,
+      "protein_pct": 33,
+      "fat_pct": 18,
+      "fiber_pct": 3,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "D07",
+      "name": "Taste of the Wild - High Prairie",
+      "kcal_per_kg": 3656,
+      "kcal_per_g": 3.656,
+      "protein_pct": 28,
+      "fat_pct": 16,
+      "fiber_pct": 4,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "D08",
+      "name": "Pedigree - Adulto Razas Pequeñas",
+      "kcal_per_kg": 3150,
+      "kcal_per_g": 3.15,
+      "protein_pct": 20,
+      "fat_pct": 12,
+      "fiber_pct": 3.5,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "D09",
+      "name": "Dog Chow (Purina) - Adulto Raza Pequeña",
+      "kcal_per_kg": 3500,
+      "kcal_per_g": 3.5,
+      "protein_pct": 24,
+      "fat_pct": 13,
+      "fiber_pct": 3.5,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "D10",
+      "name": "Beneful - Fórmula (promedio líneas)",
+      "kcal_per_kg": 3500,
+      "kcal_per_g": 3.5,
+      "protein_pct": 22,
+      "fat_pct": 13,
+      "fiber_pct": 3.5,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    }
+  ],
+
+  "cats": [
+    {
+      "id": "C01",
+      "name": "Orijen - Original Cat",
+      "kcal_per_kg": 4120,
+      "kcal_per_g": 4.12,
+      "protein_pct": 40,
+      "fat_pct": 22,
+      "fiber_pct": 3,
+      "moisture_pct": 8,
+      "ash_pct": 8
+    },
+    {
+      "id": "C02",
+      "name": "Purina ONE - Indoor / Adult",
+      "kcal_per_kg": 3756,
+      "kcal_per_g": 3.756,
+      "protein_pct": 32,
+      "fat_pct": 14,
+      "fiber_pct": 3,
+      "moisture_pct": 9,
+      "ash_pct": 7
+    },
+    {
+      "id": "C03",
+      "name": "Whiskas - Adulto (seco) promedio",
+      "kcal_per_kg": 3646,
+      "kcal_per_g": 3.646,
+      "protein_pct": 28.5,
+      "fat_pct": 14,
+      "fiber_pct": 3.5,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "C04",
+      "name": "Purina Gatina - Adultos (Carne/Pollo)",
+      "kcal_per_kg": 3500,
+      "kcal_per_g": 3.5,
+      "protein_pct": 30,
+      "fat_pct": 12,
+      "fiber_pct": 3,
+      "moisture_pct": 9,
+      "ash_pct": 7
+    },
+    {
+      "id": "C05",
+      "name": "Royal Canin - Feline Adult",
+      "kcal_per_kg": 3691,
+      "kcal_per_g": 3.691,
+      "protein_pct": 32,
+      "fat_pct": 14,
+      "fiber_pct": 3,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "C06",
+      "name": "Hill's Science Diet - Feline Adult / Indoor",
+      "kcal_per_kg": 3607.5,
+      "kcal_per_g": 3.6075,
+      "protein_pct": 31,
+      "fat_pct": 15,
+      "fiber_pct": 3,
+      "moisture_pct": 9,
+      "ash_pct": 7
+    },
+    {
+      "id": "C07",
+      "name": "IAMS - Healthy Adult",
+      "kcal_per_kg": 3750,
+      "kcal_per_g": 3.75,
+      "protein_pct": 32,
+      "fat_pct": 15,
+      "fiber_pct": 3,
+      "moisture_pct": 10,
+      "ash_pct": 7
+    },
+    {
+      "id": "C08",
+      "name": "ACANA - Feline",
+      "kcal_per_kg": 3850,
+      "kcal_per_g": 3.85,
+      "protein_pct": 35,
+      "fat_pct": 20,
+      "fiber_pct": 3,
+      "moisture_pct": 8,
+      "ash_pct": 8
+    },
+    {
+      "id": "C09",
+      "name": "Taste of the Wild - Feline",
+      "kcal_per_kg": 3741,
+      "kcal_per_g": 3.741,
+      "protein_pct": 32,
+      "fat_pct": 16,
+      "fiber_pct": 3,
+      "moisture_pct": 8,
+      "ash_pct": 7
+    }
+  ]
+}

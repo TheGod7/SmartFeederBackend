@@ -16,26 +16,32 @@ export class RecordsService {
     private readonly deviceService: DevicesService,
   ) {}
 
-  private getDateFromTimeOfDay(timeOfDay: string) {
-    const now = new Date();
+  private normalizeDateToServerLocal(date: Date | string): Date {
+    const d = new Date(date);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+  }
+
+  private getServerLocalDateFromTimeOfDay(
+    timeOfDay: string,
+    baseDate: Date,
+  ): Date {
     const [hours, minutes] = timeOfDay.split(':').map(Number);
-    const date = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
+    return new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth(),
+      baseDate.getDate(),
       hours,
       minutes,
       0,
       0,
     );
-    if (date.getTime() <= now.getTime()) date.setDate(date.getDate() + 1);
-    return date;
   }
 
-  async findByFeederAndDate(feeder: string, date: string) {
-    const now = new Date();
-    const normalizedDate = (this.dailyRecordModel as any).normalizeDate(
-      date || now,
+  async findByFeederAndDate(feeder: string, date?: string) {
+    const nowLocal = new Date();
+
+    const normalizedDateLocal = this.normalizeDateToServerLocal(
+      date || nowLocal,
     );
 
     const device = await this.deviceService.findByDeviceId(feeder);
@@ -43,41 +49,45 @@ export class RecordsService {
 
     let dailyRecord = await this.dailyRecordModel.findOne({
       feeder,
-      date: normalizedDate,
+      date: normalizedDateLocal,
     });
 
     if (!dailyRecord) {
-      dailyRecord = new this.dailyRecordModel({
-        feeder,
-        date: date || now.toISOString(),
-        meals: [],
-      });
-
       const schedules = device.configuration.schedules || [];
 
-      dailyRecord.meals = schedules.map((schedule) => ({
+      const meals = schedules.map((schedule) => ({
         scheduleId: schedule._id as Types.ObjectId,
         caloriesPlanned: schedule.caloriesPerPlate,
-        scheduledAt: this.getDateFromTimeOfDay(schedule.timeOfDay),
+        scheduledAt: this.getServerLocalDateFromTimeOfDay(
+          schedule.timeOfDay,
+          normalizedDateLocal,
+        ),
         status: MealStatus.SCHEDULED,
       }));
+
+      dailyRecord = new this.dailyRecordModel({
+        feeder,
+        date: normalizedDateLocal,
+        meals,
+      });
 
       await dailyRecord.save();
     }
 
-    const validMeals = (dailyRecord.meals || [])
-      .map((meal) => ({
-        ...meal,
-        scheduledAt:
-          meal.scheduledAt instanceof Date
-            ? meal.scheduledAt
-            : new Date(meal.scheduledAt),
-      }))
+    const meals = (dailyRecord.meals || []).map((meal) => ({
+      ...meal,
+      scheduledAt:
+        meal.scheduledAt instanceof Date
+          ? meal.scheduledAt
+          : new Date(meal.scheduledAt),
+    }));
+
+    const validMeals = meals
       .filter(
         (meal) =>
           meal.status !== MealStatus.SKIPPED &&
           meal.status !== MealStatus.FINISHED &&
-          meal.scheduledAt.getTime() > now.getTime(),
+          meal.scheduledAt.getTime() > nowLocal.getTime(),
       )
       .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
@@ -86,7 +96,7 @@ export class RecordsService {
     return {
       record: {
         date: dailyRecord.date,
-        meals: dailyRecord.meals,
+        meals: meals,
         totalCalories: dailyRecord.totalCalories,
         lastUpdate: dailyRecord.updatedAt,
         nextMeal,

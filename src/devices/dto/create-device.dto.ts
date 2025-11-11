@@ -5,6 +5,8 @@ import {
   IsString,
   MinLength,
   ValidateNested,
+  IsNumber,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateScheduleDto } from './create-schedule.dto';
@@ -14,6 +16,11 @@ export class DeviceConfigurationDto {
   @IsString()
   @IsOptional()
   brand?: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  gramsPerCalorie?: number = 3.3;
 
   @ValidateNested({ each: true })
   @Type(() => CreateScheduleDto)

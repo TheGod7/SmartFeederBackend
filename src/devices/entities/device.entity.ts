@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/users/entities/user.entity';
+import { cats, dogs } from './FoodData.json';
 
 export type DeviceDocument = Device & Document;
 
@@ -23,10 +24,22 @@ export class Schedule {
 
 export const ScheduleSchema = SchemaFactory.createForClass(Schedule);
 
+function getFoodById(id: string) {
+  const dogFood = dogs.find((dog) => dog.id === id);
+  const catFood = cats.find((cat) => cat.id === id);
+
+  const foodInfo = catFood || dogFood;
+
+  return foodInfo;
+}
+
 @Schema()
 export class DeviceConfiguration {
-  @Prop({ required: false })
-  brand?: string;
+  @Prop({ required: true, default: 'Custom' })
+  brand: string;
+
+  @Prop({ required: true, min: 0, default: 3.3 })
+  gramsPerCalorie: number;
 
   @Prop({ type: [ScheduleSchema], default: [] })
   schedules: Schedule[];
@@ -34,6 +47,30 @@ export class DeviceConfiguration {
 
 export const DeviceConfigurationSchema =
   SchemaFactory.createForClass(DeviceConfiguration);
+
+DeviceConfigurationSchema.pre<DeviceConfiguration>('save', function (next) {
+  if (this.brand === 'Custom') {
+    return next();
+  }
+
+  if (this.brand === 'default') {
+    this.brand = 'default';
+    this.gramsPerCalorie = 3.3;
+    return next();
+  }
+
+  const foodInfo = getFoodById(this.brand);
+
+  if (!foodInfo) {
+    this.brand = 'default';
+    this.gramsPerCalorie = 3.3;
+    return next();
+  }
+
+  this.brand = foodInfo.name;
+  this.gramsPerCalorie = foodInfo.kcal_per_g;
+  return next();
+});
 
 @Schema({ timestamps: true })
 export class Device {
