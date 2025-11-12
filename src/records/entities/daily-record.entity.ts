@@ -30,22 +30,8 @@ export const DailyRecordSchema = SchemaFactory.createForClass(DailyRecord);
 
 DailyRecordSchema.index({ feeder: 1, date: 1 }, { unique: true });
 
-DailyRecordSchema.statics.normalizeDate = function (d: Date | string) {
-  const date = d instanceof Date ? new Date(d) : new Date(d);
-  const y = date.getUTCFullYear();
-  const m = date.getUTCMonth();
-  const day = date.getUTCDate();
-  return new Date(Date.UTC(y, m, day, 0, 0, 0, 0));
-};
-
 DailyRecordSchema.pre<DailyRecordDocument>('save', function (next) {
   try {
-    const d = this.date;
-    if (d) {
-      const normalized = (this.constructor as any).normalizeDate(d);
-      this.date = normalized;
-    }
-
     const total = (this.meals || []).reduce((acc: number, meal: Meal) => {
       const c =
         typeof meal.caloriesConsumed === 'number' ? meal.caloriesConsumed : 0;

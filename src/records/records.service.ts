@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   DailyRecord,
@@ -13,6 +13,7 @@ export class RecordsService {
   constructor(
     @InjectModel(DailyRecord.name)
     private readonly dailyRecordModel: Model<DailyRecordDocument>,
+    @Inject(forwardRef(() => DevicesService))
     private readonly deviceService: DevicesService,
   ) {}
 
@@ -49,7 +50,7 @@ export class RecordsService {
 
     let dailyRecord = await this.dailyRecordModel.findOne({
       feeder,
-      date: normalizedDateLocal,
+      date: new Date(normalizedDateLocal),
     });
 
     if (!dailyRecord) {
@@ -102,5 +103,56 @@ export class RecordsService {
         nextMeal,
       },
     };
+  }
+
+  async updateDailyRecordsForDevice(deviceId: string) {
+    const device = await this.deviceService.findByDeviceId(deviceId);
+    if (!device) throw new Error('Device not found');
+
+    const nowLocal = new Date();
+    const todayLocal = new Date(
+      nowLocal.getFullYear(),
+      nowLocal.getMonth(),
+      nowLocal.getDate(),
+    );
+
+    const records = await this.dailyRecordModel.find({
+      feeder: deviceId,
+      date: { $gte: todayLocal },
+    });
+
+    for (const record of records) {
+      const updatedMeals: typeof record.meals = [];
+
+      for (const schedule of device.configuration.schedules) {
+        const scheduledAt = this.getServerLocalDateFromTimeOfDay(
+          schedule.timeOfDay,
+          record.date,
+        );
+
+        const existingMeal = record.meals.find(
+          (meal) => meal.scheduleId.toString() === String(schedule._id),
+        );
+
+        if (existingMeal) {
+          if (existingMeal.status === MealStatus.SCHEDULED) {
+            existingMeal.caloriesPlanned = schedule.caloriesPerPlate;
+            existingMeal.scheduledAt = scheduledAt;
+          }
+
+          updatedMeals.push(existingMeal as any);
+        } else {
+          updatedMeals.push({
+            scheduleId: schedule._id,
+            caloriesPlanned: schedule.caloriesPerPlate,
+            scheduledAt,
+            status: MealStatus.SCHEDULED,
+          } as any);
+        }
+      }
+
+      record.meals = updatedMeals;
+      await record.save();
+    }
   }
 }

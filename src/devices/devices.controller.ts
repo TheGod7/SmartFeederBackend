@@ -7,12 +7,17 @@ import {
   Get,
   Query,
   Param,
+  Delete,
 } from '@nestjs/common';
 import { DevicesService } from './devices.service';
-import { CreateDeviceDto } from './dto/create-device.dto';
+import {
+  CreateDeviceDto,
+  UpdateDeviceConfigurationDto,
+} from './dto/create-device.dto';
 import { DevicesJWTGuard } from './guard/jwt.guard';
 import { JWTGuard } from 'src/auth/guard/jwt/jwt.guard';
 import { DeviceIdGuard } from './guard/device.guard';
+import { CreateScheduleDto } from './dto/create-schedule.dto';
 
 @Controller('devices')
 export class DevicesController {
@@ -63,5 +68,31 @@ export class DevicesController {
   @Get('brands/:id')
   brand(@Param('id') id: string) {
     return this.devicesService.getFoodById(id);
+  }
+
+  @UseGuards(DeviceIdGuard)
+  @Post('change/config')
+  changeConfig(
+    @Body() changeConfigDto: UpdateDeviceConfigurationDto,
+    @Query('deviceId') deviceId: string,
+  ) {
+    return this.devicesService.changeConfig(changeConfigDto, deviceId);
+  }
+
+  @UseGuards(DeviceIdGuard)
+  @Post('add/schedule')
+  async addSchedule(
+    @Body() scheduleDto: CreateScheduleDto,
+    @Query('deviceId') deviceId: string,
+  ) {
+    return await this.devicesService.addSchedule(deviceId, scheduleDto);
+  }
+  @UseGuards(DeviceIdGuard)
+  @Delete('remove/schedule/:indentifier')
+  async removeSchedule(
+    @Param('indentifier') schedule: string,
+    @Query('deviceId') deviceId: string,
+  ) {
+    return await this.devicesService.removeSchedule(deviceId, schedule);
   }
 }

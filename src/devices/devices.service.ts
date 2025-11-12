@@ -1,10 +1,16 @@
 import {
+  BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CreateDeviceDto } from './dto/create-device.dto';
+import {
+  CreateDeviceDto,
+  UpdateDeviceConfigurationDto,
+} from './dto/create-device.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { Device, DeviceDocument } from './entities/device.entity';
@@ -12,6 +18,9 @@ import { Model, Types } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import { cats, dogs } from './entities/FoodData.json';
+import { ServerToClientCommand, WsService } from 'src/websockets/ws/ws.service';
+import { RecordsService } from 'src/records/records.service';
+import { CreateScheduleDto } from './dto/create-schedule.dto';
 
 @Injectable()
 export class DevicesService {
@@ -19,6 +28,10 @@ export class DevicesService {
     @InjectModel(Device.name)
     private readonly deviceModel: Model<DeviceDocument>,
 
+    @Inject(forwardRef(() => WsService))
+    private readonly wsService: WsService,
+    @Inject(forwardRef(() => RecordsService))
+    private readonly recordsService: RecordsService,
     private readonly usersService: UsersService,
     private jwtService: JwtService,
   ) {}
@@ -56,6 +69,7 @@ export class DevicesService {
 
     const token = await this.jwtService.signAsync({ id: newDevice._id });
 
+    await this.recordsService.findByFeederAndDate(newDevice.deviceId);
     return {
       id: newDevice._id,
       token,
@@ -241,5 +255,136 @@ export class DevicesService {
     const foodInfo = catFood || dogFood;
 
     return foodInfo;
+  }
+
+  async changeConfig(
+    changeConfigDto: UpdateDeviceConfigurationDto,
+    deviceId: string,
+  ) {
+    const device = await this.findByDeviceId(deviceId);
+    if (!device) throw new NotFoundException('Device not found');
+
+    const currentConfig = device.configuration;
+
+    if (changeConfigDto.brand !== undefined) {
+      currentConfig.brand = changeConfigDto.brand;
+    }
+
+    if (changeConfigDto.gramsPerCalorie !== undefined) {
+      currentConfig.gramsPerCalorie = changeConfigDto.gramsPerCalorie;
+    }
+
+    if (
+      changeConfigDto.schedules !== undefined &&
+      changeConfigDto.schedules.length > 0
+    ) {
+      for (const schedule of changeConfigDto.schedules) {
+        const existingIndex = currentConfig.schedules.findIndex(
+          (s) => s.timeOfDay === schedule.timeOfDay,
+        );
+
+        if (existingIndex >= 0) {
+          currentConfig.schedules[existingIndex] = {
+            ...currentConfig.schedules[existingIndex],
+            ...schedule,
+          };
+        } else {
+          currentConfig.schedules.push(schedule);
+        }
+      }
+    }
+
+    device.configuration = currentConfig;
+    await device.save();
+
+    await this.recordsService.updateDailyRecordsForDevice(deviceId);
+    this.wsService.send(
+      deviceId,
+      ServerToClientCommand.CHANGE_SCHEDULE,
+      currentConfig,
+    );
+
+    return { message: 'Configuration updated' };
+  }
+
+  async addSchedule(deviceId: string, scheduleDto: CreateScheduleDto) {
+    const device = await this.findByDeviceId(deviceId);
+    if (!device) throw new NotFoundException('Device not found');
+
+    const timeMatch = /^([01]\d|2[0-3]):([0-5]\d)$/.test(scheduleDto.timeOfDay);
+    if (!timeMatch) {
+      throw new BadRequestException(
+        'timeOfDay must have format HH:mm (00:00 - 23:59)',
+      );
+    }
+
+    if (
+      typeof scheduleDto.caloriesPerPlate !== 'number' ||
+      scheduleDto.caloriesPerPlate < 0
+    ) {
+      throw new BadRequestException(
+        'caloriesPerPlate must be a non-negative number',
+      );
+    }
+
+    const existing = device.configuration.schedules.some(
+      (s) => s.timeOfDay === scheduleDto.timeOfDay,
+    );
+    if (existing) {
+      throw new ConflictException(
+        'A schedule with the same timeOfDay already exists',
+      );
+    }
+
+    device.configuration.schedules.push({
+      timeOfDay: scheduleDto.timeOfDay,
+      caloriesPerPlate: scheduleDto.caloriesPerPlate,
+      enabled: scheduleDto.enabled === undefined ? true : scheduleDto.enabled,
+    } as any);
+
+    await device.save();
+
+    await this.recordsService.updateDailyRecordsForDevice(deviceId);
+    this.wsService.send(
+      deviceId,
+      ServerToClientCommand.CHANGE_SCHEDULE,
+      device.configuration,
+    );
+
+    return { message: 'Schedule added', configuration: device.configuration };
+  }
+
+  async removeSchedule(deviceId: string, identifier: string) {
+    const device = await this.findByDeviceId(deviceId);
+    if (!device) throw new NotFoundException('Device not found');
+
+    const beforeLen = device.configuration.schedules.length;
+
+    if (Types.ObjectId.isValid(identifier)) {
+      device.configuration.schedules = device.configuration.schedules.filter(
+        (s) => String((s as any)._id) !== String(identifier),
+      );
+    } else {
+      device.configuration.schedules = device.configuration.schedules.filter(
+        (s) => s.timeOfDay !== identifier,
+      );
+    }
+
+    const afterLen = device.configuration.schedules.length;
+
+    if (afterLen === beforeLen) {
+      throw new NotFoundException('Schedule not found');
+    }
+
+    await device.save();
+
+    await this.recordsService.updateDailyRecordsForDevice(deviceId);
+    this.wsService.send(
+      deviceId,
+      ServerToClientCommand.CHANGE_SCHEDULE,
+      device.configuration,
+    );
+
+    return { message: 'Schedule removed', configuration: device.configuration };
   }
 }

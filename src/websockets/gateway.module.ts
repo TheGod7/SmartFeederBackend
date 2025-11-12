@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
 import { SocketIOGateway } from './socket/socketIO.gateway';
 import { VideoGateway } from './ws/video.gateway';
@@ -10,7 +10,8 @@ import { WsService } from './ws/ws.service';
 import { DevicesModule } from 'src/devices/devices.module';
 
 @Module({
-  imports: [DevicesModule],
+  imports: [forwardRef(() => DevicesModule)],
+  exports: [WsService],
   providers: [
     VideoGateway,
     AudioGateway,

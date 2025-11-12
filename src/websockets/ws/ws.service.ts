@@ -187,4 +187,15 @@ export class WsService implements OnModuleInit, OnModuleDestroy {
       });
     }, 10000);
   }
+
+  send<C extends keyof WSCommandDataMap>(
+    deviceId: string,
+    command: ServerToClientCommand,
+    data: WSCommandDataMap[C],
+  ) {
+    const ws = this.getWebsocket(deviceId, WebsocketType.CONTROL);
+    if (!ws) return;
+
+    ws.send(JSON.stringify({ command, data } as WSCommand<C>));
+  }
 }
